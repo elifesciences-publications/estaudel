@@ -17,6 +17,36 @@ def lotka_volterra(x,_,r,a):
     '''
     return np.multiply(np.multiply(r, x), (1-np.dot(a, x)))
 
+def iterate_ecology(r, A, B, T, tstep=500, generations=8, x0=0.1):
+    """Returns the ecological trajectory across several generations.
+
+    r (array of 2 floats): maximum growth rate of each type.
+    A (array of 2x2 floats): inter-type interaction coefficient.
+    B (float): Bottleneck size.
+    T (float): Duration of growth rate
+    tstep (int): number of integration steps per generation.
+    generations (int): number of collective generations
+    x0 (float): initial proportion of types.
+
+    Returns a list of `generations` succesive trajectories and a list
+    of `generations`+1 final proportions
+    """
+    flow = partial(lotka_volterra, r=r, a=A)
+    time = np.linspace(0, T, tstep)
+    plist = [x0]
+    traj = []
+
+    x = x0
+    for _ in range(generations):
+        xy = scipy.integrate.odeint(flow,
+                                    y0=np.array([B*x, B*(1-x)]),
+                                    t=time)
+        x = float(xy[-1, 0]/xy[-1, :].sum())
+        traj.append(xy)
+        plist.append(x)
+
+    return traj, plist
+
 def convert_phenotypes_to_lv(phenotypes, K):
     """Convert the parameters of the stochastic model to the parameters of
     the deterministic model.
@@ -151,7 +181,7 @@ def get_gfunc(r, A, B, T=None, tstep=1000):
     return gfunc
 
 
-def continuation_on_T(gfunc, start, tmin=0, tmax=2, tstep=100):
+def continuation_on_T(gfunc, start, t0=1, tf=1e-3, tstep=100):
     """Use natural parameter continuation to draw the bifurcation diagram
     of the fixed point of G, x*, as a function of T.
 
@@ -159,17 +189,15 @@ def continuation_on_T(gfunc, start, tmin=0, tmax=2, tstep=100):
         gfunc (func: x,T -> x* [0,1]): proportion at the end of the growth
               phase as a function of the proportion at the begining of
               the growth phase (x) and the duration of the growth phase T.
-       start (float): initial value of x* for T=tmin
-       tmin (float): initial value of T along the continuation
-       tmax (float): final value of T along the continuation
-       tstep (int): number of values of T to compute between tmin and tmax.
+       start (float): initial value of x* for T=t0
+       t0 (float): initial value of T along the continuation
+       tf (float): final value of T along the continuation
+       tstep (int): number of values of T to compute between t0 and tf.
 
     Returns: list of T, list of x*
     """
     equilibria = []
-    t_list = np.linspace(tmax, tmin, tstep)
-    if t_list[-1] == 0:
-        t_list = t_list[:-1]
+    t_list = np.linspace(t0, tf, tstep)
 
     for T in t_list:
         fixed_point_function = lambda x, t=T: gfunc(x,t)-x
@@ -181,7 +209,7 @@ def continuation_on_T(gfunc, start, tmin=0, tmax=2, tstep=100):
 
     return t_list, equilibria
 
-def stability_of_01(gfunc, tmin=0, tmax=2, tstep=1000, eps=1e-6):
+def stability_of_01(gfunc, t0=1e-6, tf=1, eps=1e-6):
     """Quickly see if 0 and 1 are stable fixed point of G.
 
     Useful to draw the bifurcation diagram since 0 and 1 are always fixed
@@ -191,15 +219,29 @@ def stability_of_01(gfunc, tmin=0, tmax=2, tstep=1000, eps=1e-6):
         gfunc (func: x,T -> x* [0,1]): proportion at the end of the growth
               phase as a function of the proportion at the begining of
               the growth phase (x) and the duration of the growth phase T.
-       start (float): initial value of x* for T=tmin
-       tmin (float): initial value of T along the continuation
-       tmax (float): final value of T along the continuation
-       tstep (int): number of values of T to compute between tmin and tmax.
-       eps (float): numerical precision.
+       start (float): initial value of x* for T=t0
+       t0 (float): initial value of T along the continuation
+       tf (float): final value of T along the continuation
+       eps (float): numerical precision
     """
-    t_list = np.linspace(tmin, tmax, tstep)
     low = 0+eps
     high = 1-eps
-    stability_0 = [gfunc(low,t)<low for t in t_list]
-    stability_1 = [gfunc(high,t)>high for t in t_list]
-    return stability_0, stability_1
+    stability_0 = lambda t: gfunc(low,t)-low
+    stability_1 = lambda t: gfunc(high,t)-high
+
+    stable0 = stability_0(t0) < 0
+    if stability_0(t0)*stability_0(tf)<0:
+        tcrit =scipy.optimize.brentq(stability_0, t0, tf)
+        seg0 = [[stable0,[t0, tcrit]],[not stable0,[tcrit,tf]]]
+    else:
+        seg0 = [[stable0,[t0,tf]]]
+
+    stable1 = stability_1(t0) > 0
+    if stability_1(t0)*stability_1(tf)<0:
+        tcrit= scipy.optimize.brentq(stability_1, t0, tf)
+        seg1 = [[stable1,[t0, tcrit]],[not stable1,[tcrit,tf]]]
+    else:
+        seg1 = [[stable1,[t0,tf]]]
+
+
+    return {0:seg0, 1:seg1}
