@@ -9,7 +9,7 @@ from collections import defaultdict
 
 import numpy as np
 import pandas as pd
-import model
+import estaudel.heredity.stochastic as model
 
 def extract(out):
     """Populate the data attribute of an ecological scafolding Output object."""

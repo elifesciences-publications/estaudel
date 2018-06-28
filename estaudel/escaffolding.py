@@ -6,7 +6,6 @@ Copyright 2018 Guilhem Doulcier, Licence GNU GPL3+
 import multiprocessing
 import numpy as np
 import pickle
-import process
 
 class Output:
     """ Store the output from the simulation.
@@ -37,8 +36,6 @@ class Output:
         self.state[:, gen, icol] = out['state']
         self.current_gen = gen
 
-    def extract_data(self):
-        process.extract(self)
 
     def save(self, filename):
         with open(filename, 'wb') as file:
