@@ -92,8 +92,7 @@ def mutation_r_inter(old, effect):
     new = old.copy()
 
     # Choose which trait will mutate.
-    position = 1 if np.random.random()from functools import partial
- > 0.5 else 3
+    position = 1 if np.random.random() > 0.5 else 3
 
     # Apply the mutation.
     new[position] = np.random.normal(old[position], effect)

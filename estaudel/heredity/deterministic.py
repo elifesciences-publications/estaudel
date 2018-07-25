@@ -52,6 +52,11 @@ def convert_phenotypes_to_lv(phenotypes, K):
     the deterministic model.
 
     Return the growth array r and interaction matrix A."""
+    try:
+        phenotypes.shape[0]
+    except:
+        phenotypes = np.array(phenotypes)
+
     if phenotypes.shape[0] == 2:
         pos_0 = list(phenotypes[:, 0]).index(0)
         pos_1 = list(phenotypes[:, 0]).index(1)
@@ -170,14 +175,19 @@ def get_gfunc(r, A, B, T=None, tstep=1000):
     Return: function (float in [0,1]) -> (float in [0,1])
     """
     func = partial(lotka_volterra, r=r, a=A)
-    def gfunc(x, T=T):
-        if not T:
-            return float(x)
-        x = float(x)
-        xy = scipy.integrate.odeint(func,
-                                    y0=np.array([B*x, B*(1-x)]),
-                                    t=np.linspace(0, T, tstep))
-        return float(xy[-1, 0]/xy[-1, :].sum())
+
+    if A is None:
+        def gfunc(x,T=T):
+            return 1/( 1 + ((1/x) - 1 ) * np.exp(-(T* (r[0]-r[1]))))
+    else:
+        def gfunc(x, T=T):
+            if not T:
+                return float(x)
+            x = float(x)
+            xy = scipy.integrate.odeint(func,
+                                        y0=np.array([B*x, B*(1-x)]),
+                                        t=np.linspace(0, T, tstep))
+            return float(xy[-1, 0]/xy[-1, :].sum())
     return gfunc
 
 

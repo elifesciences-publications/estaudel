@@ -6,17 +6,22 @@ Copyright 2018 Guilhem Doulcier, Licence GNU GPL3+
 """
 
 from collections import defaultdict
+from functools import partial
+import multiprocessing
 
 import numpy as np
 import pandas as pd
 import estaudel.heredity.stochastic as model
+import estaudel.heredity.deterministic as deter
 
-def extract(out):
+def extract(out, pool=None):
     """Populate the data attribute of an ecological scafolding Output object."""
+
+    if pool is None:
+        pool = multiprocessing.Pool(1)
+
     if 'cp_density' not in out.data or True:
-            cp_density,cp_value = extract_collective_phenotype(out)
-            out.data['cp_density'] = cp_density
-            out.data['cp_value'] = cp_value
+        out.data['cp_density'], out.data['cp_value'] = extract_collective_phenotype(out)
 
     if 'individual_traits' not in  out.data:
         individual_traits = extract_individual_traits(out)
@@ -30,17 +35,19 @@ def extract(out):
     if 'resident_id' not in out.data:
          out.data['resident_id'] , out.data['resident_pheno'] = get_mab(out)
 
-    if 'pstar' not in out.data:
-        fixed_point_pheno = [model.pstar(np.array(x)) for x in out.data['resident_pheno']]
+    if 'resident_deter_traits' not in out.data:
+        out.data['resident_deter_traits'] = pool.map(partial(deter.convert_phenotypes_to_lv, K=out.parameters['carrying_capacity']),
+                                                     out.data['resident_pheno'])
+    if 'pstar' or 'tstar' not in out.data:
+        fixed_point_pheno = pool.map(deter.pstar, (A for _,A in out.data['resident_deter_traits']))
         out.data['pstar']  = np.vectorize(lambda x: (fixed_point_pheno[x]
                                           if not np.isnan(x)
                                           else np.nan))(out.data['resident_id'])
 
     if 'tstar' not in out.data:
-        tcrit_list = [model.tstar(np.array(x),
-                                     out.parameters['carrying_capacity'],
-                                     out.parameters['B'])
-                      for x in out.data['resident_pheno']]
+
+        tcrit_list = pool.starmap(partial(deter.tstar, B=out.parameters['B'], precise=True),
+                              out.data['resident_deter_traits'])
         out.data['tstar'] = np.vectorize(lambda x: (tcrit_list[int(x)]
                                                     if not np.isnan(x)
                                                     else np.nan))(out.data['resident_id'])

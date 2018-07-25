@@ -7,6 +7,14 @@ import multiprocessing
 import numpy as np
 import pickle
 
+def load(file):
+    out = Output(0,0,0,0)
+    err = out.load(file)
+    if not err:
+        return out
+    else:
+        raise IOError
+
 class Output:
     """ Store the output from the simulation.
     """
@@ -36,6 +44,8 @@ class Output:
         self.state[:, gen, icol] = out['state']
         self.current_gen = gen
 
+    def __repr__(self):
+        return """Ecological scaffolding data {} generations""".format(self.current_gen)
 
     def save(self, filename):
         with open(filename, 'wb') as file:

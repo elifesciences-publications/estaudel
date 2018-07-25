@@ -96,6 +96,22 @@ def discrete_bdm_process(T, steps, skip, state, phenotypes,
             'times':tlist,
             'history':history}
 
+def normal_mutation_abs(old, effect):
+    """ Mutation function
+    A trait is selected at random and mutated by adding a normal random variable.
+    The new trait is reflected around 0 (absolute value).
+
+    Args:
+       old (np.array): old phenotype
+       effect (dict): for each mutable position: position : standard deviation.
+
+    Used as argument for stochastic.bdm_process
+    """
+    pos = int(np.random.choice(list(effect.keys())))
+    new = old.copy()
+    new[pos] = abs(np.random.normal(old[pos], effect[pos]))
+    return new
+
 
 def birth_death_tauleap(n: int, b: float, d: float, dt: float):
     """Return a realization of the discretisation of a birth-death process.

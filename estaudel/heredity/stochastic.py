@@ -47,59 +47,6 @@ def bd_rates(phenotypes, state, K):
     rates[:, 1] = np.multiply(np.multiply(state, competition), phenotypes[:,1])
     return rates
 
-def mutation_r_inter_reflective(old, effect):
-    """Mutation function. Only the growth rate and the inter-type
-    competition are able to mutate.
-
-    Used as argument for stochastic.bdm_process
-    """
-    new = old.copy()
-
-    # Choose which trait will mutate.
-    position = 1 if np.random.random() > 0.5 else 3
-    direction = 1 if np.random.random() > 0.5 else -1
-
-    # Apply the mutation.
-    # take absolute value (mutation is reflected on 0)
-    new[position] = abs(old[position]+np.random.random()*effect[position]*direction)
-    return new
-
-def mutation_inter(old, effect):
-    """Mutation function. Only the inter-type competition are able to
-    mutate. The mutation is normally distributed with average 0 and
-    standard deviation `effect`*old_value.
-
-    The new trait is reflected around 0 (absolute value)
-
-    Used as argument for stochastic.bdm_process
-
-    """
-    new = old.copy()
-    new[3] = abs(np.random.normal(old[3], effect))
-    return new
-
-def mutation_r_inter(old, effect):
-    """Mutation function. Only the growth rate and the inter-type
-    competition are able to mutate. The mutation is normally
-    distributed with average 0 and standard deviation
-    `effect`*old_value. The new trait is clamped so all traits stays
-    positive.
-
-    Used as argument for stochastic.bdm_process
-    """
-    new = old.copy()
-
-    # Choose which trait will mutate.
-    position = 1 if np.random.random() > 0.5 else 3
-
-    # Apply the mutation.
-    new[position] = np.random.normal(old[position], effect)
-
-    # Clamp to force positive trait.
-    new[position] = max(new[position], 0)
-
-    return new
-
 def collective_fitness(phenotypes, state, var=1, goal=.5):
     """Return the collective fitness of a collective with `state[i]`
     individuals of type `phenotypes[i]`.

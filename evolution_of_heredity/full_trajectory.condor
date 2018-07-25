@@ -1,0 +1,22 @@
+# full_trajectory.condor - Job file for the scheduler.
+# (c) Guilhem Doulcier 2018 - GPLv3+
+
+# Parameters
+name = out/full_trajectory.$(Cluster).$(Process)
+request_cpus = 8
+request_memory = 2048
+
+# Output
+error = $(name).err
+output = $(name).out
+log = $(name).log
+
+# Command
+universe = vanilla
+executable = /usr/bin/python3.5
+
+# arguments = full_trajectory.py full_trajectory.py --continue \"20180629_145424_N3.pkle\" --NPROC $(request_cpus) --N 5
+arguments = full_trajectory.py --name \"$(name)\" --NPROC $(request_cpus) --selection \"rank\"
+Queue 3
+arguments = full_trajectory.py --name \"$(name)\" --NPROC $(request_cpus) --selection \"neutral\"
+Queue 3
