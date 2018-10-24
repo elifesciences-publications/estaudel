@@ -14,7 +14,7 @@ import pandas as pd
 import estaudel.heredity.stochastic as model
 import estaudel.heredity.deterministic as deter
 
-def extract(out, pool=None):
+def extract(out, pool=None, complete=True):
     """Populate the data attribute of an ecological scafolding Output object."""
 
     if pool is None:
@@ -27,24 +27,24 @@ def extract(out, pool=None):
         individual_traits = extract_individual_traits(out)
         out.data['individual_traits'] = individual_traits
 
-    if 'individual_traits_density' not in out.data:
+    if complete and 'individual_traits_density' not in out.data:
         individual_traits_density, individual_traits_bins = extract_individual_traits_density(out.data['individual_traits'])
         out.data['individual_traits_density'] = individual_traits_density
         out.data['individual_traits_bins'] = individual_traits_bins
 
-    if 'resident_id' not in out.data:
+    if complete and 'resident_id' not in out.data:
          out.data['resident_id'] , out.data['resident_pheno'] = get_mab(out)
 
-    if 'resident_deter_traits' not in out.data:
+    if complete and 'resident_deter_traits' not in out.data:
         out.data['resident_deter_traits'] = pool.map(partial(deter.convert_phenotypes_to_lv, K=out.parameters['carrying_capacity']),
                                                      out.data['resident_pheno'])
-    if 'pstar' or 'tstar' not in out.data:
+    if complete and 'pstar' or 'tstar' not in out.data:
         fixed_point_pheno = pool.map(deter.pstar, (A for _,A in out.data['resident_deter_traits']))
         out.data['pstar']  = np.vectorize(lambda x: (fixed_point_pheno[x]
                                           if not np.isnan(x)
                                           else np.nan))(out.data['resident_id'])
 
-    if 'tstar' not in out.data:
+    if complete and 'tstar' not in out.data:
 
         tcrit_list = pool.starmap(partial(deter.tstar, B=out.parameters['B'], precise=True),
                               out.data['resident_deter_traits'])
