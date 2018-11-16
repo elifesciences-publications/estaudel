@@ -21,7 +21,7 @@ Death rate are:
 """
 import numpy as np
 
-COLOR_NAMES = ['red','blue']
+COLOR_NAMES = ['red', 'blue']
 POS_NAMES = ['color', 'growth_rate', 'interaction_intra', 'interaction_inter']
 
 ### Stochastic model

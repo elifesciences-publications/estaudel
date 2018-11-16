@@ -158,9 +158,6 @@ def get_p0_rho(b: float, d: float, dt: float):
         rho = (b-d)*e / (b-d*e)
     return p0, rho
 
-
-
-
 def birth_death_discrete(n: int, b: float, d: float, dt: float):
     """Return a realization of the discretisation of a birth-death process.
 

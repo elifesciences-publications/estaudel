@@ -4,8 +4,8 @@ Copyright 2018 Guilhem Doulcier, Licence GNU GPL3+
 """
 
 import multiprocessing
-import numpy as np
 import pickle
+import numpy as np
 
 def load(file):
     out = Output(0,0,0,0)
@@ -83,7 +83,7 @@ class Output:
 def collective_generations(N: int, pop, output,
                            collective_fitness_func,
                            collective_birth_death_process_func,
-                           dilution_and_growth_func, filename,save_frequency=10, pool=None):
+                           dilution_and_growth_func, filename=None, save_frequency=10, pool=None):
     '''Args:
         N: number of generations
         pop: list of <phenotype, state>
@@ -106,7 +106,7 @@ def collective_generations(N: int, pop, output,
             break
         output.parents.append(parents)
         pop = [(grown[i]['phenotype'], grown[i]['state']) for i in parents]
-        if n%save_frequency==0:
+        if filename is not None and n%save_frequency==0:
             fname = '{}_last.pkle'.format(filename)
             print('Saving to {}'.format(fname))
             output.save(fname)
@@ -213,7 +213,7 @@ def dilution_and_growth(parent, bottleneck_size, growth_function):
     Args:
         parent (state,phenotypes).
         bottleneck size (int): number of cells.
-        growth_function (function) perform a growth.
+        growth_function (function): perform a growth.
     """
     state = np.random.multinomial(bottleneck_size, parent[1]/parent[1].sum())
     return growth_function(state=state, phenotypes=parent[0])

@@ -36,5 +36,4 @@ pip3 install -e estaudel/
 
 # 5. Try it out.
 python3 estaudel/evolution_of_heredity/full_trajectory.py --N 10 --D 10
-# or look at the jupyter notebook "evolution_of_heredity/getting_started.ipynb"
 ```
