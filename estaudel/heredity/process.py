@@ -77,8 +77,17 @@ def extract_individual_traits(out, gen=None, colors=(0,1), positions=(1,3)):
     return traits
 
 def extract_collective_phenotype(out, nstep=100, gen=None):
+    """
+    Args:
+        out (Output object) with phenotype, state and current_gen attributes.
+        nstep (int): number of bins for the density
+        gen (int): number of generations to process (if None, process all)
+    Return:
+        density (np.array): a (nstep, generation) array giving the histogram of type 1 individuals.
+        trait (np.array): (generation, droplet) array containing the proportion of type 1 individuals.
+    """
     if gen is None:
-        gen = out.current_gen
+        gen = out.current_gen + 1
     trait = np.zeros((gen,out.state.shape[2]))
     density = np.zeros((nstep, gen))
     bins = np.linspace(0,1,nstep+1)

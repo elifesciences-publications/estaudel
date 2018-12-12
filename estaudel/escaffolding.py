@@ -8,6 +8,7 @@ import pickle
 import numpy as np
 
 def load(file):
+    """Create a new Output object and load its content from a pickle file"""
     out = Output(0,0,0,0)
     err = out.load(file)
     if not err:
@@ -17,6 +18,18 @@ def load(file):
 
 class Output:
     """ Store the output from the simulation.
+
+    This object handle the saving and loading of the simulation data.
+    The method append is called each generation and fill the attributes.
+
+    Attributes:
+        phenotype[i,j,n,d]: Trait j value of type i in collective d at generation n.
+        fitness[n,d]: fitness of collective d at genration n
+        state[i,n,d]: Number of individuals of type i in collective d at generation n.
+        parents[n][d]: Identity of the parent of collective d in generation n+1.
+        parameters : dictionnary of parameters
+        data: dictionnary used to store additional information deduced from the other attributes.
+
     """
     def __init__(self, N: int, D: int, Ntypes: int, Psize: int):
         """
@@ -26,12 +39,17 @@ class Output:
         - N: Number of generations.
         - D: Number of collectives.
         """
+
+        # State of all the collectives:
+        # All the array are assigned empty at the full size for performance reason.
         self.phenotype = np.empty((Ntypes, Psize, N, D))
         self.fitness = np.empty((N, D))
         self.state = np.empty((Ntypes, N, D))
-        self.param = {}
-        self.current_gen = 0
         self.parents = []
+
+        # Current generation.
+        self.current_gen = 0
+
         self.parameters = {}
         self.data = {}
 
@@ -48,11 +66,11 @@ class Output:
         return """Ecological scaffolding data {} generations""".format(self.current_gen)
 
     def save(self, filename):
+        """Save the content of the object in a pickle file"""
         with open(filename, 'wb') as file:
             pickle.dump({'phenotype':self.phenotype,
                          'fitness':self.fitness,
                          'state':self.state,
-                         'param':self.param,
                          'current_gen':self.current_gen,
                          'parents':self.parents,
                          'parameters':self.parameters,
@@ -60,6 +78,7 @@ class Output:
             }, file)
 
     def load(self, filename):
+        """Load the content of the object from a pickle file"""
         with open(filename, 'rb') as file:
             try:
                 data = pickle.load(file)
@@ -72,7 +91,6 @@ class Output:
             else:
                 self.phenotype = data['phenotype']
                 self.fitness = data['phenotype']
-                self.param = data['param']
                 self.state = data['state']
                 self.parents = data['parents']
                 self.current_gen = data['current_gen']
@@ -115,6 +133,7 @@ def collective_generations(N: int, pop, output,
 def collective_serial_transfer(fitness):
     """Decide wich collective should be reproduced and which should be
     discarded. All collective have exactly one child here.
+
     Return:
         a list containing the indice of the parent of each new collective
     """
@@ -122,7 +141,14 @@ def collective_serial_transfer(fitness):
 
 def collective_birth_death_neutral(fitness, percentile=None):
     """Decide wich collective should be reproduced and which should be
-    discarded. Here we discard a percentile of collectives chosen unifromly.
+    discarded.
+
+    Here we discard a percentile of collectives chosen unifromly.
+    Args:
+        fitness (iterable): fitness of each collective.
+        percentile (float): percentile of collectives to discard.
+    Return:
+        a list containing the indice of the parent of each new collective
     """
     if percentile is None:
         return collective_serial_transfer(fitness)
@@ -169,7 +195,6 @@ def collective_birth_death_process(fitness, percentile=None):
     newborns = list(np.random.choice(surviving, size=ndeath))
 
     return surviving+newborns
-
 
 def collective_birth_death_process_soft(fitness, percentile):
     """Decide wich collective should be reproduced and which should be
