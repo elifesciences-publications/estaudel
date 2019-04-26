@@ -38,7 +38,7 @@ def discrete_bdm_process(T, steps, skip, state, phenotypes,
     mutid = len(state)
 
     for t in range(1, steps):
-        # at each time step we compute the new rates
+        # At each time step we compute the new rates
         rates = rate_function(phenotypes, state)
         nmutants = np.zeros(M, dtype=int)
 
@@ -47,11 +47,19 @@ def discrete_bdm_process(T, steps, skip, state, phenotypes,
                 new_state[i] = birth_death_tauleap(state[i], rates[i, 0], rates[i, 1], dt)
                 birth = new_state[i] - state[i]
                 if birth > 0:
+                    # Each birth event may give rise to a potential
+                    # mutation with probability mutation_rate.
                     nmutants[i] = np.random.binomial(birth, mutation_rate)
+
 
         # Treat the mutations.
         if mutation_rate and nmutants.sum():
             for color in (0, 1):
+                # nmutant[i] contains how many potential mutations
+                # arose during this time step for type i.  But we only
+                # apply mutations if we have a type spot to store
+                # them.
+
                 # Create a list that contains the index of the phenotype of
                 # every individual that mutated during the last time interval.
                 # i.e. if nmutant = [1,3,2], parent_list = [0,1,1,1,2,2].
