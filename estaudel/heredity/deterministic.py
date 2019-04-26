@@ -7,15 +7,31 @@ from functools import partial
 import numpy as np
 import scipy.integrate
 
-def lotka_volterra(x,_,r,a):
+def lotka_volterra(x, _=None, r=None, a=None):
     '''Temporal derivative of the Lotka-Volterra system.
     Args:
         x (array of N floats): number of individual of each type.
         _ (None): time, not used but required by scipy.integrate.
         r (array of N floats): maximum growth rate of each type.
         a (array of NxN floats): inter-type interaction coefficient.
+
+    Return dx/dt.
     '''
-    return np.multiply(np.multiply(r, x), (1-np.dot(a, x)))
+    return (r*x)*(1-a@x)
+
+def lotka_volterra_Nf(x,_=None,r=None,a=None):
+    '''Temporal derivative of the Lotka-Volterra system in Nf coordinates.
+    Args:
+        x (array of 2 floats): x[0] = N (number of individuals, x[1] = f (frequency of type 1 individuals).
+        _ (None): time, not used but required by scipy.integrate.
+        r (array of N floats): maximum growth rate of each type.
+        a (array of NxN floats): inter-type interaction coefficient.
+
+    return (dN/dt, df/dt)'''
+    return np.array([
+     (r[0]*(-a[0,0]*x[0]*x[1] + a[0,1]*(x[1] - 1)*x[0] + 1)*x[1] - r[1]*(x[1] - 1)*(-a[1,0]*x[0]*x[1] + a[1,1]*(x[1] - 1)*x[0] + 1))*x[0],
+     (r[0]*(a[0,0]*x[0]*x[1] - a[0,1]*(x[1] - 1)*x[0] - 1) - r[1]*(a[1,0]*x[0]*x[1] - a[1,1]*(x[1] - 1)*x[0] - 1))*(x[1] - 1)*x[1]
+    ])
 
 def iterate_ecology(r, A, B, T, tstep=500, generations=8, x0=0.1):
     """Returns the ecological trajectory across several generations.
@@ -73,12 +89,17 @@ def convert_phenotypes_to_lv(phenotypes, K):
         A /= K
     return r,A
 
+def internal_equilibrium(A):
+    det = np.linalg.det(A)
+    stable = A[0, 0] > A[1, 0] and A[1, 1] > A[0, 1]
+    return [(A[1, 1]-A[0, 1])/det, (A[0, 0]-A[1, 0])/det], stable
+
 def stable_equilibria(A):
     """Output the stable equilibrium point provided with the interaction
     matrix."""
     if A[0, 0] > A[1, 0] and A[1, 1] > A[0, 1]:
         # Coexistence
-        return [(A[1, 1]-A[0, 1])/np.linalg.det(A), (A[0, 0]-A[1, 0])/np.linalg.det(A)]
+        return internal_equilibrium(A)
     elif  A[0, 0] > A[1, 0]:
         # 0 exclude 1
         return [1/A[0, 0], 0]
@@ -87,6 +108,16 @@ def stable_equilibria(A):
         return [0, 1/A[1, 1]]
     # Bistable.
     return [np.nan,np.nan]
+
+def list_equilibria(A):
+    """List equilibria associated with the interaction matrix"""
+    ie, ie_stability = internal_equilibrium(A)
+    equilibria = [[0, 0], [0, 1/A[1, 1]], [1/A[0, 0], 0], ie]
+    stability = [False,
+                 A[0, 1] > A[1, 1],
+                 A[1, 0] > A[0, 0],
+                 ie_stability]
+    return list(zip(equilibria, stability))
 
 def pstar(A):
     '''Return the proportion of type 1 cells at the stable
@@ -123,43 +154,25 @@ def tstar(r, A, B, precise=False, steps=100, eps=1e-6):
 
     ifast, islow = (1, 0) if r[1] > r[0] else (0, 1)
 
+
     # If the fast growing type is also the one excluding the other,
     # there is no critical time.
-    if ((ifast == 1 and np.isclose(stable_eq, 1))
-        or (ifast == 0 and np.isclose(stable_eq, 0))):
-        return np.nan
+    if ((ifast == 0 and np.isclose(stable_eq, 1))
+        or (ifast == 1 and np.isclose(stable_eq, 0))):
+        return np.nan, np.nan
 
     guesstimate = (((1/r[ifast])*(A[islow, ifast]/A[ifast, ifast]) - (1/r[islow]))
                    / (1 - (A[islow, ifast]/A[ifast, ifast]))
                    * np.log(B*A[ifast, ifast]/(B*A[ifast, ifast]+1)))
     if not precise:
-        return guesstimate
-
-    t_0 = guesstimate
-    t_max = guesstimate
+        return guesstimate, guesstimate
 
     low = 0+eps
     high = 1-eps
     gfunc = get_gfunc(r, A, B)
-    negative_if_fp = lambda t : (gfunc(low, t)-low) * (gfunc(high, t)-high)
+    negative_if_fp = lambda t: (gfunc(low, t)-low) * (gfunc(high, t)-high)
 
-    # Find a 'big' T for which there is no fixed point
-    i = 0
-    while (negative_if_fp(t_0)<0) and i<steps:
-        t_0 *= 0.66
-        i += 1
-
-    i = 0
-    # Find a 'small' T for wich there is a fixed point.
-    while (negative_if_fp(t_max)>0) and i<steps:
-        t_max *= 1.33
-        i += 1
-
-    if negative_if_fp(t_0)>0 and negative_if_fp(t_max)<0:
-        return scipy.optimize.brentq(negative_if_fp, t_0, t_max)
-
-    return np.nan
-
+    return scipy.optimize.fsolve(negative_if_fp, guesstimate), guesstimate
 
 def get_gfunc(r, A, B, T=None, tstep=1000):
     """ Return the G function (final proportion as a function of initial proportions)
@@ -190,7 +203,6 @@ def get_gfunc(r, A, B, T=None, tstep=1000):
             return float(xy[-1, 0]/xy[-1, :].sum())
     return gfunc
 
-
 def continuation_on_T(gfunc, start, t0=1, tf=1e-3, tstep=100):
     """Use natural parameter continuation to draw the bifurcation diagram
     of the fixed point of G, x*, as a function of T.
@@ -204,20 +216,52 @@ def continuation_on_T(gfunc, start, t0=1, tf=1e-3, tstep=100):
        tf (float): final value of T along the continuation
        tstep (int): number of values of T to compute between t0 and tf.
 
-    Returns: list of T, list of x*
+  Returns: list of T, list of x*
     """
     equilibria = []
     t_list = np.linspace(t0, tf, tstep)
 
     for T in t_list:
         fixed_point_function = lambda x, t=T: gfunc(x,t)-x
-        e = scipy.optimize.fsolve(fixed_point_function,
-                                  x0=(equilibria[-1]
-                                      if equilibria
-                                      else start))
-        equilibria.append(float(e))
-
+        val,_,conv,_ = scipy.optimize.fsolve(fixed_point_function,
+                                             full_output=True,
+                                             x0=(equilibria[-1]
+                                                 if equilibria
+                                                 else start))
+        equilibria.append(float(val) if conv else np.nan)
     return t_list, equilibria
+
+def continuation_left_right(func, p0, pmin, pmax, x0, steps=100):
+    """Natural parameter continuation of func(x,p)=0
+    on the right up to pmax and on the left up to pmin. """
+
+    val, _, conv, _ = scipy.optimize.fsolve(lambda x,p=p0:func(x,p0), x0,
+                                                full_output=True)
+
+    if conv:
+        xstart = val[0]
+    else:
+        raise ValueError('Starting point not found')
+
+    # Continuation on the left
+    eq_left = []
+    eq_right = []
+    pspace_left = np.linspace(p0, pmin, steps)
+    pspace_right = np.linspace(p0, pmax, steps)
+    for p in pspace_left:
+        val, _, conv, _ = scipy.optimize.fsolve(lambda x,p=p:func(x,p),
+                                    eq_left[-1] if eq_left else xstart,
+                                    full_output=True)
+        eq_left.append(val[0] if conv else np.nan)
+    for p in pspace_right:
+        val, _, conv, _ = scipy.optimize.fsolve(lambda x,p=p:func(x,p),
+                                                eq_right[-1] if eq_right else xstart,
+                                                full_output=True)
+        eq_right.append(val[0] if conv else np.nan)
+
+    pspace = np.concatenate([pspace_left[::-1], pspace_right])
+    eq = eq_left[::-1]+eq_right
+    return pspace, eq
 
 def stability_of_01(gfunc, t0=1e-6, tf=1, eps=1e-6):
     """Quickly see if 0 and 1 are stable fixed point of G.
@@ -255,3 +299,57 @@ def stability_of_01(gfunc, t0=1e-6, tf=1, eps=1e-6):
 
 
     return {0:seg0, 1:seg1}
+
+def get_bifurcation_diagram(r, A, B, tmax=1):
+    """Get bifurcation diagram for T=0...tmax."""
+
+    # Get the g function (µ,T) -> µ_final
+    g = get_gfunc(r, A, B)
+
+    # Get the equilibria of the system (T=\infty)
+    ie,ies = internal_equilibrium(A)
+    stability = stability_of_01(g, t0=tmax, tf=1e-9)
+    ps = pstar(A)
+
+    ts = None
+    ts_approx = None
+    cont_info = None
+    stability_of_continuation = None
+    iep = ie[0]/np.sum(ie)
+
+    if 0 < iep < 1:
+        # If the internal equilirium is stable, look for the
+        # bifurcation time t* and continuate this branch from
+        # t=1 to t=tstar.
+        ts, ts_approx = tstar(r, A, B, precise=True)
+        x0 = scipy.optimize.brentq(lambda x: g(x,1)-x, 1e-5, 1-1e-5)
+        t_cont, p_cont = continuation_on_T(g, t0=tmax, tf=ts, start=x0)
+        cont_info = {'t0':1, 'tmax':1, 'tmin':ts, 'p0':x0}
+        stability_of_continuation = g(x0-1e-5,1)-(x0-1e-5)>0
+
+    elif len(stability[0])==2 and len(stability[1])==2:
+        # If the stability of 0 and 1 change twice on [0,1], there is
+        # an intermediate branch to continuate...
+        tmin = min(stability[1][0][1][1],stability[0][0][1][1])
+        tmax = max(stability[1][0][1][1],stability[0][0][1][1])
+        t0 = (tmin + tmax)/2
+        x0 = scipy.optimize.brentq(lambda x: g(x,t0)-x, 1e-5, 1-1e-5)
+        cont_info = {'t0':t0,'tmax':tmax,'tmin':tstar,'p0':x0}
+        t_cont,p_cont = continuation_left_right(lambda x,t: g(x,t)-x,
+                                                pmin=tmin,
+                                                pmax=tmax,
+                                                p0=t0,
+                                                x0=x0,
+                                                steps=1000)
+        stability_of_continuation = g(x0-1e-5,t0)-(x0-1e-5)>0
+    else:
+        # Otherwise there is no continuation to perform.
+        t_cont = []
+        p_cont = []
+
+    return {'pstar':ps, 'tstar':tstar,
+            'tstar_approx':ts_approx,
+            'g':g, 'stability_of_01':stability,
+            'cont_info':cont_info,
+            'continuation':[t_cont,p_cont],
+            'stability_of_continuation':stability_of_continuation}
