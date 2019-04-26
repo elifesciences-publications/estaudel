@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """ full_trajectory.py -- main entrypoint to start a simulation of the heredity model.
 Copyright 2018 Guilhem Doulcier, Licence GNU GPL3+
 """
@@ -34,7 +35,8 @@ PARAMETERS = {
     'percentile': (20, ' Percentile of collective that go extinct each generation'),
     'selection': ('rank', 'Rank or neutral'),
     'continue': (None, 'Path to an output file from which extract the initial population'),
-    'name': (None, 'Base name for output')
+    'name': (None, 'Base name for output'),
+    'force_traits':(False, 'When continue, Reset traits to initial_type.')
 }
 
 def main(p, pool=None, filename=None):
@@ -88,8 +90,13 @@ def main(p, pool=None, filename=None):
         out.load(p['continue'])
         N = out.current_gen
         print('Loading gen {} from {}'.format(N, p['continue']))
-        pop = [(out.phenotype[:, :, N, d], out.state[:, N, d])
-               for d in range(out.state.shape[2])]
+        if p['force_traits']:
+            pop = [(model.gen_collective(p['max_types'], p['B'], p['initial_type0'], p['initial_type1'])[0],
+                    out.state[:, N, d])
+                    for d in range(out.state.shape[2])]
+        else:
+            pop = [(out.phenotype[:, :, N, d], out.state[:, N, d])
+                   for d in range(out.state.shape[2])]
     else:
         pop = [model.gen_collective(p['max_types'], p['B'], p['initial_type0'], p['initial_type1'])
                for i in range(p['D'])]
