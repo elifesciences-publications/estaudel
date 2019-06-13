@@ -47,6 +47,7 @@ def bd_rates(phenotypes, state, K):
     rates[:, 1] = np.multiply(np.multiply(state, competition), phenotypes[:,1])
     return rates
 
+
 def collective_fitness(phenotypes, state, var=1, goal=.5):
     """Return the collective fitness of a collective with `state[i]`
     individuals of type `phenotypes[i]`.
@@ -54,7 +55,7 @@ def collective_fitness(phenotypes, state, var=1, goal=.5):
     Used in argument in escaffolding.collective_generation.
     """
     prop = np.sum([n for g, n in zip(phenotypes, state) if g[0] == 0]) / state.sum()
-    return 1/np.sqrt(np.pi*2*var) * np.exp(-(goal-prop)**2 / 2*var)
+    return 1/(var*np.sqrt(np.pi*2)) * np.exp(-0.5*((goal-prop)/var)**2)
 
 def gen_collective(max_types, B, green=(0, 1, .8, .3), red=(1, 1, .9, .3), proportion=None):
     """Return a (phenotypes, sate) tuple encoding a collective.
