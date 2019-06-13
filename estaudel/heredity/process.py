@@ -5,6 +5,7 @@ Copyright 2018 Guilhem Doulcier, Licence GNU GPL3+
 --
 """
 
+import logging
 from collections import defaultdict
 from functools import partial
 import multiprocessing
@@ -13,6 +14,10 @@ import numpy as np
 import pandas as pd
 import estaudel.heredity.stochastic as model
 import estaudel.heredity.deterministic as deter
+
+logger = logging.getLogger('estaudel')
+logger.setLevel(logging.DEBUG)
+logger.propagate = False
 
 def extract(out, pool=None, complete=True):
     """Populate the data attribute of an ecological scafolding Output object."""
@@ -106,7 +111,7 @@ def extract_individual_traits_density(individual_traits, nstep = 100):
         mx = max(mx, np.max(individual_traits[(model.COLOR_NAMES[1],key)]['value'].values))
         mi = min(mi, np.min(individual_traits[(model.COLOR_NAMES[1],key)]['value'].values))
         bins[key] = np.linspace(mi,mx,nstep+1)
-        print("Individual trait: {} -> {} {}".format(key, mi, mx))
+        logger.info("Individual trait: {} -> {} {}".format(key, mi, mx))
     individual_traits_density = {}
     for key in individual_traits.keys():
             gen = individual_traits[key].generation.max()

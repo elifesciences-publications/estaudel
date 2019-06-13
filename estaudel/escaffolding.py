@@ -6,6 +6,12 @@ Copyright 2018 Guilhem Doulcier, Licence GNU GPL3+
 import multiprocessing
 import pickle
 import numpy as np
+import logging
+
+logger = logging.getLogger('estaudel')
+logger.setLevel(logging.DEBUG)
+logger.propagate = False
+
 
 def load(file):
     """Create a new Output object and load its content from a pickle file"""
@@ -83,10 +89,10 @@ class Output:
             try:
                 data = pickle.load(file)
             except OSError as ex:
-                print('OS Error loading {} {}'.format(filename, ex))
+                logger.warning('OS Error loading {} {}'.format(filename, ex))
                 return 1
             except EOFError as ex:
-                print('File Error loading {} {}'.format(filename, ex))
+                logger.warning('File Error loading {} {}'.format(filename, ex))
                 return 1
             else:
                 self.phenotype = data['phenotype']
@@ -113,24 +119,24 @@ def collective_generations(N: int, pop, output,
     if pool is None:
         pool = multiprocessing.Pool(1)
     for n in range(output.current_gen, output.current_gen+N):
-        print('Generation {}'.format(n))
+        logger.info('Generation {}'.format(n))
         grown = pool.map(dilution_and_growth_func, pop, 1)
         for d, out in enumerate(grown):
             out['fitness'] = collective_fitness_func(out['phenotype'], out['state'])
             output.append(n, d, out)
         parents = collective_birth_death_process_func([col['fitness'] for col in grown])
         if not len(parents):
-            print('No surviving collective')
+            logger.warning('No surviving collective')
             break
         output.parents.append(parents)
         pop = [(grown[i]['phenotype'], grown[i]['state']) for i in parents]
         if filename is not None and n%save_frequency==0:
             fname = '{}_last.pkle'.format(filename)
-            print('Saving to {}'.format(fname))
+            logger.debug('Saving to {}'.format(fname))
             output.save(fname)
     return output,pop
 
-def collective_serial_transfer(fitness):
+def collective_serial_transfer(fitness, **_):
     """Decide wich collective should be reproduced and which should be
     discarded. All collective have exactly one child here.
 
@@ -157,6 +163,7 @@ def collective_birth_death_neutral(fitness, percentile=None):
     nsurv = int(D * percentile/100)
     nborn = D-nsurv
     surviving = list(np.random.choice(np.arange(len(fitness)), size=nsurv, replace=False))
+    logger.info('Percentile is {}, {} survivors '.format(percentile, len(surviving)))
     newborns = list(np.random.choice(surviving, size=nborn))
     return surviving + newborns
 
@@ -173,7 +180,7 @@ def collective_birth_death_process(fitness, percentile=None):
 
     # If all fitness are equal, all collective reproduce once.
     if all(fitness == np.max(fitness)):
-        print('All collective have the same fitness...')
+        logger.warning('All collective have the same fitness...')
         return collective_birth_death_neutral(fitness, percentile)
 
     if percentile is None:
@@ -181,10 +188,10 @@ def collective_birth_death_process(fitness, percentile=None):
     else:
         threshold = np.percentile(fitness, percentile)
         surviving = [d for d, f in enumerate(fitness) if f > threshold]
-        print('Percentile is {}, fitness threshold is {} '.format(percentile, threshold))
+        logger.info('Percentile is {}, fitness threshold is {} '.format(percentile, threshold))
     ndeath = len(fitness)-len(surviving)
 
-    print('{} Collective Death ~ Mean fitness {}'.format(ndeath, np.mean(fitness)))
+    logger.info('{} Collective Death ~ Mean fitness {}'.format(ndeath, np.mean(fitness)))
 
     # if no survivor, return an empty list
     if not surviving:
@@ -223,8 +230,8 @@ def collective_birth_death_process_soft(fitness, percentile):
                                       size=int(len(fitness)*(100-percentile)),
                                       replace=False,
                                       p=fitness/fitness.sum()))
-    ndeath = len(fitness)-len(surviving)
-    print('{} Collective Death ~ Mean fitness {}'.format(ndeath, np.mean(fitness)))
+
+    logger.info('{} Collective Death ~ Mean fitness {}'.format(nborn, np.mean(fitness)))
 
     # Newborns are taken uniformely from the surviving individuals to
     # keep pop size constant.
