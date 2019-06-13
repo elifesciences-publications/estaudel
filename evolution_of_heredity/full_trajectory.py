@@ -74,10 +74,16 @@ def main(p, pool=None, filename=None):
                                       var=p['collectiveSelectionStrength'],
                                       goal=p['goal'])
 
+
     if p['selection'] == 'neutral':
         collective_birth_death_func = escaffolding.collective_birth_death_neutral
     elif p['selection'] == 'rank':
         collective_birth_death_func = escaffolding.collective_birth_death_process
+    elif p['selection'] == 'soft':
+        collective_birth_death_func = escaffolding.collective_birth_death_process_soft
+    elif p['selection'] == 'serial':
+        collective_birth_death_func = escaffolding.collective_serial_transfer
+
     collective_birth_death_func = partial(collective_birth_death_func,
                                           percentile=p['percentile'])
 

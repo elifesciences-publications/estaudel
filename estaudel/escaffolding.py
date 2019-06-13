@@ -160,8 +160,8 @@ def collective_birth_death_neutral(fitness, percentile=None):
         return collective_serial_transfer(fitness)
 
     D = len(fitness)
-    nsurv = int(D * percentile/100)
-    nborn = D-nsurv
+    nborn = int(D * percentile/100.0)
+    nsurv = D-nborn
     surviving = list(np.random.choice(np.arange(len(fitness)), size=nsurv, replace=False))
     logger.info('Percentile is {}, {} survivors '.format(percentile, len(surviving)))
     newborns = list(np.random.choice(surviving, size=nborn))
@@ -178,7 +178,7 @@ def collective_birth_death_process(fitness, percentile=None):
     """
     fitness = np.array(fitness)
 
-    # If all fitness are equal, all collective reproduce once.
+    # If all fitness are equal, neutral
     if all(fitness == np.max(fitness)):
         logger.warning('All collective have the same fitness...')
         return collective_birth_death_neutral(fitness, percentile)
@@ -216,18 +216,19 @@ def collective_birth_death_process_soft(fitness, percentile):
        fitness (iter): fitness of each parent collective. Weight of the drawing.
        percentiles (float): proportion (in %) of collectives to discard.
     Return:
-        a list containing the indice of the parent of each new collective
-
+        a list containing the indice of the parent of each new collective.
     """
     fitness = np.array(fitness)
-
+    D = len(fitness)
+    nborn = int(D * percentile/100.0)
+    nsurv = D-nborn
 
     # If all fitness are equal, default to neutral
     if all(fitness == np.max(fitness)):
         return collective_birth_death_neutral(fitness, percentile)
 
     surviving = list(np.random.choice(np.arange(len(fitness)),
-                                      size=int(len(fitness)*(100-percentile)),
+                                      size=nsurv,
                                       replace=False,
                                       p=fitness/fitness.sum()))
 
@@ -235,7 +236,7 @@ def collective_birth_death_process_soft(fitness, percentile):
 
     # Newborns are taken uniformely from the surviving individuals to
     # keep pop size constant.
-    newborns = list(np.random.choice(surviving, size=ndeath))
+    newborns = list(np.random.choice(surviving, size=nborn))
     return surviving+newborns
 
 
