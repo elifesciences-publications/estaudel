@@ -26,7 +26,7 @@ def layout(branches, sortby=None, root='ROOT', delroot=True):
     width = {root:0}
     current = root
     if sortby is None:
-        sortf = lambda:1
+        sortf = lambda x:1
     else:
         sortf = lambda k: sortby[k]
     to_visit = deque()
@@ -140,7 +140,7 @@ def draw_tree_rings(branches, xinfo, yinfo, zinfo, oinfo=None, width=1024, heigh
 
     ctx.scale(1, 1)  # Normalizing the canvas
     ctx.set_source_rgba(0.1, 0.1, 0.1, 1)  # Solid color
-    ctx.set_line_width(1)
+    ctx.set_line_width(3)
 
     for parent, child in branches:
         try:
@@ -167,7 +167,7 @@ def coalescent(nodes, branches):
     """Compute the coalescent of some nodes.
 
     Given a list of nodes and a list of branches, return the set of
-    nodes in the coalescent tree of the nodes.
+    nodes in the coalescent tree of the input.
     """
     parent_map = {child:parent for parent,child in branches}
     coal = set(nodes)
@@ -176,3 +176,15 @@ def coalescent(nodes, branches):
         parents = set([parent_map[n] for n in parents if n in parent_map])
         coal = coal.union(parents)
     return coal
+
+def descent(nodes, branches):
+    """Compute the descent of some nodes.
+    Given a list of nodes and a list of branches, return the set 
+    of nodes in the descent tree of the input.
+    """
+    desc = set(nodes)
+    children = set(nodes)
+    while len(children):
+        children = set([child for parent, child in branches if parent in children])
+        desc = desc.union(children)
+    return desc
