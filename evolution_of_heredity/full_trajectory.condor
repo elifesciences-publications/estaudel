@@ -15,7 +15,6 @@ log = $(name).log
 universe = vanilla
 executable = /usr/bin/python3.5
 
-# arguments = full_trajectory.py full_trajectory.py --continue \"20180629_145424_N3.pkle\" --NPROC $(request_cpus) --N 5
 arguments = full_trajectory.py --name \"$(name)\" --NPROC $(request_cpus) --selection \"rank\"
 Queue 3
 arguments = full_trajectory.py --name \"$(name)\" --NPROC $(request_cpus) --selection \"neutral\"

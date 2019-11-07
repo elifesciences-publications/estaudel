@@ -37,3 +37,6 @@ pip3 install -e estaudel/
 # 5. Try it out.
 python3 estaudel/evolution_of_heredity/full_trajectory.py --N 10 --D 10
 ```
+
+The figures are produced by code found in the Jupyter notebooks within
+the `evolution_of_heredity` folder.
