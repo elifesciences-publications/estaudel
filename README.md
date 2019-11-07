@@ -7,8 +7,8 @@
 - `/estaudel/escafolding` : Implement collective level events, like collective reproduction and selection.
 - `/estaudel/heredity`: Implement the red/blue model used in the heredity project.
 - `/evolution_of_heredity/` : contains code for the figure in the
-  "Evolutionary origins of heredity during major egalitarian
-  transition in individuality" paper.
+  "Eco-evolutionary dynamics of nested Darwinian populations and the
+emergence of community-level heredity" article.
 - `/evolution_of_heredity/full_trajectory.py`: shows how to use the bits
   and pieces from the library and do a full simulation.
 

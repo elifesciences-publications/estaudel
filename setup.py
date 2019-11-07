@@ -13,5 +13,7 @@ setup(name='estaudel',
           'numpy',
           'scipy',
           'pandas',
-          'matplotlib',],
+          'matplotlib',
+          'pycairo',
+          'Pillow'],
       zip_safe=False)
