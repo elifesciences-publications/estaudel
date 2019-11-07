@@ -197,6 +197,8 @@ def get_gfunc(r, A, B, T=None, tstep=1000):
             if not T:
                 return float(x)
             x = float(x)
+            T = float(T)    
+
             xy = scipy.integrate.odeint(func,
                                         y0=np.array([B*x, B*(1-x)]),
                                         t=np.linspace(0, T, tstep))
