@@ -110,7 +110,7 @@ def plot_ring_prop(ctx, cx, cy, r, prop, shrink=0.8, colors=(
     ctx.arc(cx, cy, r*shrink, 0, 2*math.pi)
     ctx.fill()
 
-def draw_tree_rings(branches, xinfo, yinfo, zinfo, oinfo=None, width=1024, height=600, size=6):
+def draw_tree_rings(branches, xinfo, yinfo, zinfo, oinfo=None, width=1024, height=600, size=6, label=None, line_width=3):
     # Draw tree
     childs = frozenset([b[1] for b in branches])
     parents = frozenset([b[0] for b in branches])
@@ -140,7 +140,7 @@ def draw_tree_rings(branches, xinfo, yinfo, zinfo, oinfo=None, width=1024, heigh
 
     ctx.scale(1, 1)  # Normalizing the canvas
     ctx.set_source_rgba(0.1, 0.1, 0.1, 1)  # Solid color
-    ctx.set_line_width(3)
+    ctx.set_line_width(line_width)
 
     for parent, child in branches:
         try:
@@ -161,6 +161,16 @@ def draw_tree_rings(branches, xinfo, yinfo, zinfo, oinfo=None, width=1024, heigh
                            alpha=oscale(node))
         except KeyError:
             pass
+
+    if label is not None:
+        print(label)
+        ctx.select_font_face("Arial", cairo.FONT_SLANT_NORMAL, 
+                             cairo.FONT_WEIGHT_BOLD)
+        ctx.set_font_size(200)
+        ctx.set_source_rgba(0.1, 0.1, 0.1, 1)
+        ctx.move_to(0.5,0.1)
+        ctx.show_text(label*30)
+        ctx.fill()
     return surface
 
 def coalescent(nodes, branches):
