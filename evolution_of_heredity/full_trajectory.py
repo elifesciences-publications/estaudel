@@ -149,7 +149,8 @@ def cli_interface():
     time_str = tstart.strftime('%Y%m%d_%H%M%S')
 
     # Setup the multiprocessing pool with the right number of parameters.
-    pool = multiprocessing.Pool(param['NPROC'])
+    # Intializiser np.random.seed ensures that the workers have a different RNG seed.
+    pool = multiprocessing.Pool(param['NPROC'], initializer=np.random.seed)
 
     # Generate a filename
     filename = ((param['name'] + "_") if param['name'] is not None else '')
