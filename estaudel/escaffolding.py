@@ -110,7 +110,7 @@ class Output:
 def collective_generations(N: int, pop, output,
                            collective_fitness_func,
                            collective_birth_death_process_func,
-                           dilution_and_growth_func, filename=None, save_frequency=10, pool=None):
+                           dilution_and_growth_func, filename=None, save_frequency=100, pool=None):
     '''Args:
         N: number of generations
         pop: list of <phenotype, state>
@@ -134,7 +134,7 @@ def collective_generations(N: int, pop, output,
         output.parents.append(parents)
         pop = [(grown[i]['phenotype'], grown[i]['state']) for i in parents]
         if filename is not None and n % save_frequency == 0:
-            fname = '{}_last.pkle'.format(filename)
+            fname = '{}_ongoing.pkle'.format(filename)
             logger.debug('Saving to {}'.format(fname))
             output.save(fname)
     return output, pop
