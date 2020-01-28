@@ -25,7 +25,7 @@ PARAMETERS = {
     'steps': (100, 'Number of discrete steps for bdm process.'),
     'skip': (100, ' Frequency at which growth trajectory are saved.'),
     'mutation_rate': (1, 'Probability that a birth event will also be a mutation event.'),
-    'mutation_effect': ({1:0.1, 3:0.1}, 'Amplitude of mutational effects {trait:amplitude}'),
+    'mutation_effect': ({1: 0.1, 3: 0.1}, 'Amplitude of mutational effects {trait:amplitude}'),
     'carrying_capacity': (1500, 'Max number of particle in a collective (will divide the a_intra, a_inter).'),
     'collectiveSelectionStrength': (1, ' Localisation parameter for the collective fitness function.'),
     'max_types': (4, 'Maximum number of types per collective'),
@@ -36,8 +36,9 @@ PARAMETERS = {
     'selection': ('rank', 'Rank or neutral'),
     'continue': (None, 'Path to an output file from which extract the initial population'),
     'name': (None, 'Base name for output'),
-    'force_traits':(False, 'When continue, Reset traits to initial_type.')
+    'force_traits': (False, 'When continue, Reset traits to initial_type.')
 }
+
 
 def main(p, pool=None, filename=None):
     """ Assemble elements of the model and run the simulation. """
@@ -45,10 +46,11 @@ def main(p, pool=None, filename=None):
     # Create a function that maps the phenotype before mutationm to the phenotype
     # after mutation. (phenotype->phenotype)
     if len(p['mutation_effect']):
-        mutation_function = partial(stochastic.normal_mutation_abs, effect=p['mutation_effect'])
+        mutation_function = partial(stochastic.normal_mutation_abs,
+                                    effect=p['mutation_effect'])
     else:
         print('No mutation !')
-        mutation_function = lambda x: None
+        def mutation_function(x): return None
         p['mutation_rate'] = 0
 
     #### Growth dynamics ####
@@ -74,7 +76,6 @@ def main(p, pool=None, filename=None):
                                       var=p['collectiveSelectionStrength'],
                                       goal=p['goal'])
 
-
     if p['selection'] == 'neutral':
         collective_birth_death_func = escaffolding.collective_birth_death_neutral
     elif p['selection'] == 'rank':
@@ -99,7 +100,7 @@ def main(p, pool=None, filename=None):
         if p['force_traits']:
             pop = [(model.gen_collective(p['max_types'], p['B'], p['initial_type0'], p['initial_type1'])[0],
                     out.state[:, N, d])
-                    for d in range(out.state.shape[2])]
+                   for d in range(out.state.shape[2])]
         else:
             pop = [(out.phenotype[:, :, N, d], out.state[:, N, d])
                    for d in range(out.state.shape[2])]
@@ -112,7 +113,6 @@ def main(p, pool=None, filename=None):
     output = escaffolding.Output(p['N'], p['D'], pop[0][0].shape[0], pop[0][0].shape[1])
     output.parameters = p
 
-
     ### Run the simulation ###
     output, pop = escaffolding.collective_generations(p['N'], pop, output,
                                                       collective_fitness_func,
@@ -124,10 +124,11 @@ def main(p, pool=None, filename=None):
     estaudel.heredity.process.extract(output, pool)
     sys.stdout.flush()
 
-    ### Save the output as a pkle file for further analysis.
+    # Save the output as a pkle file for further analysis.
     if filename is not None:
         output.save(filename+'.pkle')
     return output
+
 
 def cli_interface():
     """Command line interface for the heredity model"""
@@ -138,9 +139,10 @@ def cli_interface():
         parser.add_argument('--'+name, help=man, nargs="?")
     args = parser.parse_args()
 
-    ### Update the parameters values from the arguments
-    ### UNSAFE USE OF EVAL ! Be Careful :-)
-    param = ({k:eval(v) if v is not None else PARAMETERS[k][0] for k, v in vars(args).items()})
+    # Update the parameters values from the arguments
+    # UNSAFE USE OF EVAL ! Be Careful :-)
+    param = (
+        {k: eval(v) if v is not None else PARAMETERS[k][0] for k, v in vars(args).items()})
 
     # Start to keep track of time to compute the duration of the simulation.
     tstart = datetime.datetime.now()
@@ -150,7 +152,7 @@ def cli_interface():
     pool = multiprocessing.Pool(param['NPROC'])
 
     # Generate a filename
-    filename = ((param['name'] + "_") if  param['name'] is not None else '')
+    filename = ((param['name'] + "_") if param['name'] is not None else '')
     filename += time_str + "_"
     filename += format_arguments(args)
 
@@ -177,6 +179,7 @@ def cli_interface():
     tend = datetime.datetime.now()
     print('Ran in {}'.format((tend-tstart).total_seconds()))
 
+
 def format_arguments(args):
     """Generate a filename-compatible string from the arguments"""
     def fmt(s):
@@ -191,6 +194,7 @@ def format_arguments(args):
                 if (k != 'name' and v is not None)]
 
     return "_".join(args_fmt)
+
 
 if __name__ == "__main__":
     cli_interface()

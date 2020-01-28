@@ -15,12 +15,13 @@ logger.propagate = False
 
 def load(file):
     """Create a new Output object and load its content from a pickle file"""
-    out = Output(0,0,0,0)
+    out = Output(0, 0, 0, 0)
     err = out.load(file)
     if not err:
         return out
     else:
         raise IOError
+
 
 class Output:
     """ Store the output from the simulation.
@@ -37,6 +38,7 @@ class Output:
         data: dictionnary used to store additional information deduced from the other attributes.
 
     """
+
     def __init__(self, N: int, D: int, Ntypes: int, Psize: int):
         """
         Args:
@@ -74,14 +76,14 @@ class Output:
     def save(self, filename):
         """Save the content of the object in a pickle file"""
         with open(filename, 'wb') as file:
-            pickle.dump({'phenotype':self.phenotype,
-                         'fitness':self.fitness,
-                         'state':self.state,
-                         'current_gen':self.current_gen,
-                         'parents':self.parents,
-                         'parameters':self.parameters,
-                         'data':self.data
-            }, file)
+            pickle.dump({'phenotype': self.phenotype,
+                         'fitness': self.fitness,
+                         'state': self.state,
+                         'current_gen': self.current_gen,
+                         'parents': self.parents,
+                         'parameters': self.parameters,
+                         'data': self.data
+                         }, file)
 
     def load(self, filename):
         """Load the content of the object from a pickle file"""
@@ -103,6 +105,7 @@ class Output:
                 self.parameters = data['parameters']
                 self.data = data['data'] if 'data' in data else {}
                 return 0
+
 
 def collective_generations(N: int, pop, output,
                            collective_fitness_func,
@@ -130,11 +133,12 @@ def collective_generations(N: int, pop, output,
             break
         output.parents.append(parents)
         pop = [(grown[i]['phenotype'], grown[i]['state']) for i in parents]
-        if filename is not None and n%save_frequency==0:
+        if filename is not None and n % save_frequency == 0:
             fname = '{}_last.pkle'.format(filename)
             logger.debug('Saving to {}'.format(fname))
             output.save(fname)
-    return output,pop
+    return output, pop
+
 
 def collective_serial_transfer(fitness, **_):
     """Decide wich collective should be reproduced and which should be
@@ -144,6 +148,7 @@ def collective_serial_transfer(fitness, **_):
         a list containing the indice of the parent of each new collective
     """
     return list(range(len(fitness)))
+
 
 def collective_birth_death_neutral(fitness, percentile=None):
     """Decide wich collective should be reproduced and which should be
@@ -167,6 +172,7 @@ def collective_birth_death_neutral(fitness, percentile=None):
     newborns = list(np.random.choice(surviving, size=nborn))
     return surviving + newborns
 
+
 def collective_birth_death_process(fitness, percentile=None):
     """Decide wich collective should be reproduced and which should be
     discarded.
@@ -188,7 +194,8 @@ def collective_birth_death_process(fitness, percentile=None):
     else:
         threshold = np.percentile(fitness, percentile)
         surviving = [d for d, f in enumerate(fitness) if f > threshold]
-        logger.info('Percentile is {}, fitness threshold is {} '.format(percentile, threshold))
+        logger.info('Percentile is {}, fitness threshold is {} '.format(
+            percentile, threshold))
     ndeath = len(fitness)-len(surviving)
 
     logger.info('{} Collective Death ~ Mean fitness {}'.format(ndeath, np.mean(fitness)))
@@ -202,6 +209,7 @@ def collective_birth_death_process(fitness, percentile=None):
     newborns = list(np.random.choice(surviving, size=ndeath))
 
     return surviving+newborns
+
 
 def collective_birth_death_process_soft(fitness, percentile):
     """Decide wich collective should be reproduced and which should be
