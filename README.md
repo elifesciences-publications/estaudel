@@ -40,3 +40,20 @@ python3 estaudel/evolution_of_heredity/full_trajectory.py --N 10 --D 10
 
 The figures are produced by code found in the Jupyter notebooks within
 the `evolution_of_heredity` folder.
+
+## License
+
+Copyright (C) Guilhem Doulcier 2016-2020
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.

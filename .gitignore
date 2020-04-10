@@ -6,3 +6,6 @@ __pycache__/
 .ipynb_checkpoints/*
 .ipynb_checkpoints/
 *.egg-info
+/estaudel/.mypy_cache/
+/estaudel/heredity/.mypy_cache/
+/evolution_of_heredity/.mypy_cache/
