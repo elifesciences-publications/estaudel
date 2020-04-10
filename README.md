@@ -1,5 +1,11 @@
 # estaudel - Nested Darwinian population simulation
 
+## Cite this work
+
+> Eco-evolutionary dynamics of nested Darwinian populations and the emergence of  community-level heredity
+> Guilhem Doulcier, Amaury Lambert, Silvia De Monte, Paul B. Rainey
+> bioRxiv 827592; doi: https://doi.org/10.1101/827592
+
 ## Content:
 
 - `/estaudel/` : is the python library
