@@ -11,6 +11,9 @@ import logging
 logger = logging.getLogger('estaudel')
 logger.setLevel(logging.DEBUG)
 logger.propagate = False
+ch = logging.StreamHandler()
+ch.setLevel(logging.DEBUG)
+logger.addHandler(ch)
 
 
 def load(file):

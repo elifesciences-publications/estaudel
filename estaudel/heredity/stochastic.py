@@ -24,7 +24,8 @@ import numpy as np
 COLOR_NAMES = ['red', 'blue']
 POS_NAMES = ['color', 'growth_rate', 'interaction_intra', 'interaction_inter']
 
-### Stochastic model
+# Stochastic model
+
 
 def bd_rates(phenotypes, state, K):
     """ Return the density dependent birth and death rates of the phenotypes.
@@ -44,7 +45,7 @@ def bd_rates(phenotypes, state, K):
     competition = np.array([np.sum([N/K * phenotypes[j, 2+int(phenotypes[j, 0] != phenotypes[i, 0])]
                                     for j, N in enumerate(state)])
                             for i in range(len(state))])
-    rates[:, 1] = np.multiply(np.multiply(state, competition), phenotypes[:,1])
+    rates[:, 1] = np.multiply(np.multiply(state, competition), phenotypes[:, 1])
     return rates
 
 
@@ -56,6 +57,7 @@ def collective_fitness(phenotypes, state, var=1, goal=.5):
     """
     prop = np.sum([n for g, n in zip(phenotypes, state) if g[0] == 0]) / state.sum()
     return 1/(var*np.sqrt(np.pi*2)) * np.exp(-0.5*((goal-prop)/var)**2)
+
 
 def gen_collective(max_types, B, green=(0, 1, .8, .3), red=(1, 1, .9, .3), proportion=None):
     """Return a (phenotypes, sate) tuple encoding a collective.
@@ -69,7 +71,7 @@ def gen_collective(max_types, B, green=(0, 1, .8, .3), red=(1, 1, .9, .3), propo
 
     phenotypes = np.zeros((max_types, 4))
     for i in range(max_types):
-        phenotypes[i, :] = green if i%2==0 else red
+        phenotypes[i, :] = green if i % 2 == 0 else red
 
     state = np.zeros(max_types)
     if proportion is None:
