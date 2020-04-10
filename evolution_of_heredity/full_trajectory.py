@@ -10,6 +10,8 @@ import datetime
 import platform
 import sys
 
+import numpy
+
 import estaudel.stochastic as stochastic
 import estaudel.escaffolding as escaffolding
 import estaudel.heredity.stochastic as model
@@ -27,7 +29,7 @@ PARAMETERS = {
     'mutation_rate': (1, 'Probability that a birth event will also be a mutation event.'),
     'mutation_effect': ({1: 0.1, 3: 0.1}, 'Amplitude of mutational effects {trait:amplitude}'),
     'carrying_capacity': (1500, 'Max number of particle in a collective (will divide the a_intra, a_inter).'),
-    'collectiveSelectionStrength': (1, ' Localisation parameter for the collective fitness function.'),
+    'collectiveSelectionStrength': (1.0, ' Localisation parameter for the collective fitness function.'),
     'max_types': (4, 'Maximum number of types per collective'),
     'goal': (.5, ' Optimal proportion of types.'),
     'initial_type0': ((0, 6, .8, .15), 'intial traits (c, r, a_intra, a_inter)'),
@@ -40,6 +42,10 @@ PARAMETERS = {
 }
 
 
+def empty_func(x):
+    return None
+
+
 def main(p, pool=None, filename=None):
     """ Assemble elements of the model and run the simulation. """
     ####  Mutation ####
@@ -50,7 +56,7 @@ def main(p, pool=None, filename=None):
                                     effect=p['mutation_effect'])
     else:
         print('No mutation !')
-        def mutation_function(x): return None
+        mutation_function = empty_func
         p['mutation_rate'] = 0
 
     #### Growth dynamics ####
@@ -127,6 +133,19 @@ def main(p, pool=None, filename=None):
     # Save the output as a pkle file for further analysis.
     if filename is not None:
         output.save(filename+'.pkle')
+
+    try:
+        import pandas
+        import numpy as np
+        distrib_cp = output.data['cp_value'][output.current_gen, :]
+        stats = {'mean_cp': distrib_cp.mean()}
+        for k, v in output.data['individual_traits'].items():
+            tr = v[v.generation == v.generation.max()]
+            stats[k] = np.sum(tr.value * tr.number)/tr.number.sum()
+        stats.update(output.parameters)
+        pandas.DataFrame([stats]).to_csv(filename+'.csv')
+    except Exception as ex:
+        print(ex)
     return output
 
 
@@ -150,7 +169,7 @@ def cli_interface():
 
     # Setup the multiprocessing pool with the right number of parameters.
     # Intializiser np.random.seed ensures that the workers have a different RNG seed.
-    pool = multiprocessing.Pool(param['NPROC'], initializer=np.random.seed)
+    pool = multiprocessing.Pool(param['NPROC'], initializer=numpy.random.seed)
 
     # Generate a filename
     filename = ((param['name'] + "_") if param['name'] is not None else '')
