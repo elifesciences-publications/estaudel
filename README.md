@@ -1,3 +1,6 @@
+
+This code is associated with the paper from Doulcier et al., "Eco-evolutionary dynamics of nestedDarwinian populations and the emergence of community-level heredity". eLife, 2020. http://doi.org/10.7554/eLife.53433
+
 # estaudel - Nested Darwinian population simulation
 
 ## Cite this work
